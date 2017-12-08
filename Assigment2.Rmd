@@ -1,0 +1,83 @@
+---
+title: "Project Course 2"
+author: "Daniel Castineyra"
+date: "8 de diciembre de 2017"
+output: html_document
+---
+# Most harmful weather events in the US from 1950 to 2011
+
+We are evaluating the most harmful weather events in the US from 1950 to 2011 using data from the National Weather Service. The variables considered for the study are Fatalities and Injuries caused by the event (health) and property and crop damaged in USD caused by the event (economic).
+
+
+## Data Processing
+
+a. We read the data directly from the bzip file.
+b. Subset and creating a new database the data only for the variables relevant for the study, i.e. Fatalities and Injuries (health) and Property and Crop damaged (economic).
+c. Create two variables, one that sum the fatalities and injuries, and another that sum the property and crop damage.
+
+```{r, echo = TRUE,cache=TRUE}
+datos<-read.csv(zz<-bzfile("repdata%2FData%2FStormData.bz2"),header=TRUE,sep=",")
+library(dplyr)
+## Subsetting the data
+harmful<-datos[,c("EVTYPE","FATALITIES","INJURIES","PROPDMG","CROPDMG")]
+## Getting the total health and economic damage
+harmful<-mutate(harmful,health = FATALITIES + INJURIES)
+harmful<-mutate(harmful,economic = PROPDMG + CROPDMG)
+```
+
+## Results
+
+1. Across the United States which types of events are most harmful with respect to population health?
+
+To answer this question, we are going to measure the variables total injuries and fatalities by event type.
+
+The table below shows the top 10 events most harmful with respect to fatalities and injuries (health)
+
+```{r, echo= TRUE}
+## Getting the total fatalitites and injuries by event type
+by_event<-harmful %>% group_by(EVTYPE)
+healthdmg<- summarise(by_event,health = sum(health))
+hdmg <- data.frame(Event = healthdmg$EVTYPE, Health_DMG = healthdmg$health)
+##sorting
+hdmg<- hdmg[with(hdmg,order(-Health_DMG)),]
+## Getting the top 10 events most harmful with respect to fatalities and injurires
+top10<-head(hdmg,n=10L)
+top10
+```
+
+From the table we can see that the most harmful event in the US (fatalitites and injuries) is `r top10[[1,1]]` with `r top10[[1,2]]` ocurrencies.
+
+The below plot shows the same results.
+
+```{r,echo=TRUE}
+par(cex.axis=.5)
+plot(top10$Health_DMG,xlab="Event",ylab="Health Damage",main="Top 10 most harmful events (Health)",xaxt="n")
+axis(side=1,at=1:10,labels=top10$Event)
+```
+
+2. Across the United States, which types of events have the grates economic consequences?
+
+To answer this question, we are going to measure the variables total property and crop damage by event type.
+
+The table below shows the top 10 events most harmful with respect to property and crop damage (economic)
+
+```{r, echo= TRUE}
+## Getting the total property and crop damage by event
+ecodmg<- summarise(by_event,economic = sum(economic))
+edmg <- data.frame(Event = ecodmg$EVTYPE, Economic_DMG = ecodmg$economic)
+##sorting
+edmg<- edmg[with(edmg,order(-Economic_DMG)),]
+## Getting the top 10 events most harmful with respect to property and crop damage
+top10e<-head(edmg,n=10L)
+top10e
+```
+
+From the table we can see that the most harmful event in the US (property and crop damage) is `r top10e[[1,1]]` with `r top10e[[1,2]]` ocurrencies.
+
+The below plot shows the same results.
+
+```{r,echo=TRUE}
+par(cex.axis=.5)
+plot(top10e$Economic_DMG,xlab="Event",ylab="Economic Damage",main="Top 10 most harmful events (Economic)",xaxt="n")
+axis(side=1,at=1:10,labels=top10e$Event)
+```
